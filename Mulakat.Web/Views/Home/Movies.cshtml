@@ -1,0 +1,118 @@
+﻿
+@{
+    ViewData["Title"] = "Filmler";
+}
+
+<h1>Filmler</h1>
+
+<div class="form-inline">
+    <a class="btn btn-primary" href="/Home/Add" role="button">Yeni Ekle</a>
+</div>
+
+<div id="modal"></div>
+
+<div class="panel-body" style="margin-top:50px!important">
+    <div id="grid_table" style="margin:auto;">
+
+    </div>
+</div>
+
+@section Scripts {
+
+    <script>
+        $(document).on('click', '.gridDeleteButton', function (e) {
+            var Id = $(this).data('id')
+            if ($("modal").hide()) {
+                $("#modal").show();
+            }
+            $("#modal").html('<div class="swal-overlay swal-overlay--show-modal" tabindex="-1"><div class="swal-modal" role="dialog" aria-modal="true"><div class="swal-icon swal-icon--error"><div class="swal-icon--error__x-mark"><span class="swal-icon--error__line swal-icon--error__line--left"></span><span class="swal-icon--error__line swal-icon--error__line--right"></span></div></div><div class="swal-title" style="">Emin Misiniz?</div><div class="swal-text" style="">Kayıt Silinecektir! Onaylıyor Musunuz?</div><div class="swal-footer"><div class="swal-button-container"><button id="CancelBtn" class="swal-button swal-button--cancel btn btn-default">İptal</button><div class="swal-button__loader"><div></div><div></div><div></div></div></div><div class="swal-button-container"><button id="DeleteBtn" class="swal-button swal-button--confirm btn btn-primary">Onayla</button><div class="swal-button__loader"><div></div><div></div><div></div></div></div></div></div></div>');
+            $("#DeleteBtn").click(function () {
+                $("#modal").hide();
+                $.ajax({
+                    type: "POST",
+                    url: "/Home/Delete/" + Id,
+                    success: function (data) {
+                        if (data.error == false) {
+                            retriveData();
+                        }
+                        else {
+                            alert("İşlem Gerçekleştirilemedi, Hata: " + data.message)
+                        }
+                    }
+                })
+            })
+
+            $("#CancelBtn").click(function () {
+                $("#modal").hide();
+            })
+        });
+
+
+        var obj = {};
+        var $grid;
+
+        $(document).ready(function () {
+            initializeGrid();
+            retriveData();
+        })
+
+        function initializeGrid() {
+            obj = {
+                width: '100%',
+                height: 500,
+                resizable: true,
+                scrollModel: { autoFit: false, theme: true, horizontal: true, pace: 'fast' },
+                draggable: false,
+                numberCell: { resizable: true, title: "#" },
+
+                showBottom: false,
+                columnBorders: true,
+                editable: false,
+
+                title: "Filmler",
+                flexHeight: true,
+                wrap: false, hwrap: false,
+
+            };
+            obj.colModel = [
+                {
+                    title: "Resim", width: '20%', dataType: "string", dataIndx: "poster",
+                    render: function (ui) {
+                        return "<img style='max-width:100px' src='" + ui.rowData.poster + "'/>";
+                    }
+                },
+                {
+                    title: "Ad", width: '40%', dataType: "string", dataIndx: "title",
+                },
+                {
+                    title: "Yıl", width: '40%', dataType: "string", dataIndx: "year",
+                },
+                {
+                    title: "İşlemler", width: 130, dataIndx: "id",
+                    render: function (ui) {
+                        return "<a href='/Home/Details/" + ui.rowData.id + "' class='btn btn-warning btn-xs'>Detaylar</a> \ <a data-id='" + ui.rowData.id + "' data-click='swal-danger' class='btn btn-danger btn-xs gridDeleteButton'>Sil</a>";
+                    },
+                }
+            ],
+                $grid = $("#grid_table").pqGrid(obj);
+            $grid.pqGrid("option", $.paramquery.pqGrid.regional["tr"]);
+        }
+
+        function retriveData() {
+            $.ajax({
+                type: "GET",
+                url: "/Home/_ListJSON",
+                success: function (response) {
+                    console.log(JSON.stringify(response.data, null, 2))
+                    $grid.pqGrid('option', 'dataModel.data', response.data);
+                    $grid.pqGrid('refreshDataAndView');
+                },
+                error: function (e) {
+                }
+            })
+        }
+
+    </script>
+
+}
+
